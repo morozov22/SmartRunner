@@ -4,7 +4,7 @@
 
 ## SmartRunner code:
 
-* <span style="color:blue"><font size="4"> __run_optimizers.py__ (high-level Python3 script for running optimizers) </font></span>
+* <span style="color:blue"><font size="4"> __run_optimizers.py__ (high-level Python3 script for running global optimizers) </font></span>
 
 * <span style="color:blue"><font size="4"> __SmartRunner.py__ (SmartRunner code library) </font></span>
 
@@ -20,7 +20,7 @@
 
 * <span style="color:blue"><font size="4"> __utilities_min.py__ (auxiliary functions) </font></span>
 
-`run_optimizers.py` is a high-level script for running any of the 5 optimizers: __SmartRunner__, __Evolutionary Algorithm__,
+`run_optimizers.py` is a high-level script for running the following five optimizers: __SmartRunner__, __Evolutionary Algorithm__,
 __Simulated Annealing__, __Stochastic Hill Climbing__, and __Taboo Search__.
 
 <br/><br/>
@@ -52,16 +52,15 @@ corresponds to that used in the SmartRunner manuscript.
 Please note that some options accept a single value or an array of
 values either on a linear or $\log_{10}$ scale. For example, with StochasticHillClimbing `-T=0.2` will simply set $T=0.2$ in all runs,
 `-T=\[0.1,1.0,10\]` will perform a scan over 10 uniformly spaced temperature values: $T = \{0.1, 0.2, \dots , 1.0\}$,
-and `-T=\[0.1,10.0,3,\"log10\"\]` will result in $T = \{0.1, 1.0, 10.0\}$.
-Parentheses `()` can be used instead of brackets `[]`. The code tries to guess intelligently whether the resulting array values
+while `-T=\[0.1,10.0,3,\"log10\"\]` will result in $T = \{0.1, 1.0, 10.0\}$.
+In all options, parentheses `()` can be used instead of brackets `[]`. The code tries to guess intelligently whether the resulting array values
 should be *int* or *float*: for example, `-ltot=\(10000,50000,5\)` will result in a scan over
 $l_\mathrm{tot} = \{ 10000, 20000, 30000, 40000, 50000 \}$.
 
-The `-mode=landscape_type` option determines the fitness function to be optimized and `-moveset_mode=moveset_type`
+The `-mode=landscape_type` option determines the fitness function to be optimized and the `-moveset_mode=moveset_type` option
 determines the move type. Currently, the code supports
 `landscape_type = {Rastrigin_4D,Ackley_4D,Griewank_4D,double_well_2D}` with `moveset_type = {nnb,spmut}` and
-`landscape_type = {SKZ,NKX.Y}` (where Z is the number of spins in the SK model and X,Y are the number of sites and
-neighbors in the NK model) with `moveset_type = single_spin_flip`.
+`landscape_type = {SKZ,NKX.Y}` (where Z is the number of spins in the Sherrington-Kirkpatrick (SK) spin glass model and X,Y are the number of sites and neighbors in the Kauffman's NK model) with `moveset_type = single_spin_flip`.
 The code is designed to be flexible - new systems and movesets can be added in a straighforward manner
 by modifying `landscapes_min.py`.
 
@@ -71,15 +70,14 @@ be set to a large value in the `-ltot=ltot_val` flag, so that the code does not 
 
 If the `-init_each={T,F}` flag is specified, each individual run with a given set of input parameter values will
 start from a randomly chosen state. If the `-init=\(s1,s2,...\)` flag is specified ($(s_1,s_2,\dots)$
-must correspond to a valid state), the `-init_each` flag will be ignored and all runs will start from
+must correspond to a valid state on the fitness landscape), the `-init_each` flag will be ignored and all runs will start from
 the user-provided state.
 
 The sets of randomly generated SK and NK model parameters are stored in auxiliary files. The files are output
-using `-Jout=Jij_out.dat` and `-NKout=NK_out.dat` flags, where the `*.dat` are the output filenames. Note that
-for the NK model, two files are actually output: `NK_out.dat.1` and `NK_out.dat.2`. For the subsequent runs in the
-quenched disorder mode, the model parameter files must be read in using `-Jin=Jij_in.dat` and `-NKin=NK_in.dat`
-flags, otherwise the parameters will be regenerated *de novo*. In both scenarios, the model will be the same
-for all runs in the current series.
+using `-Jout=Jij_out.dat` and `-NKout=NK_out.dat` flags respectively, where the `*.dat` are the output filenames. Note that
+for the NK model, two files are actually generated: `NK_out.dat.1` and `NK_out.dat.2`. For the subsequent runs in the
+quenched disorder mode, the model parameter files must be read in using the `-Jin=Jij_in.dat` flag for the SK model and the `-NKin=NK_in.dat` flag for the NK model, otherwise the model parameters will be generated *de novo*. For both models, the parameters will be the same for all runs in the current series specified
+by the `run_optimizers.py` input parameters.
 
 The `-discrete={T,F}` flag is only valid for the SK model and refers to the probabilistic model for spin couplings.
 When `-discrete=T`, the couplings are drawn from $\{−1,+1\}$ with equal probability. Otherwise, the couplings are sampled
@@ -91,16 +89,13 @@ The `-Smax` flag in the TabuSearch mode refers to the maximum allowed fitness va
 this value is exceeded. For this option to have no effect, it should be set to a large positive number, e.g.
 `-Smax=10000.0`.
 
-If the `-straj={0,1}` is set to $1$, a fitness trajectory will be output for each run in the series. All filenames
-will be created automatically based on the user-provided output filename.
+If the `-straj={0,1}` is set to $1$, a fitness trajectory will be output in a separate file for each run in the series. All filenames will be created automatically based on the user-provided output filename.
 
-If the `-socc={0,1}` is set to $1$, a sorted list of state occupancies will be output for each run in the series.
-As with the fitness trajectories, all filenames will be created automatically based on the user-provided output filename.
-Both `-straj` and `-socc` options are off by default.
+If the `-socc={0,1}` is set to $1$, a sorted list of state occupancies will be output in a separate file
+for each run in the series. As with the fitness trajectories, all filenames will be created automatically based on the user-provided output filename. Both `-straj` and `-socc` options are off by default.
 
 Finally, the `-sopt={1,2}` flag is only relevant in the SmartRunner mode. It is an advanced option having to
-do with how SmartRunner avoids being trapped in a fully explored region. Both options produce nearly identical
-results, such that the default setting, `-sopt=2`, should suffice for most users.
+do with how SmartRunner avoids being trapped in a fully explored region. Since both options produce nearly identical results, the default setting, `-sopt=2`, should suffice for most users.
 
 <br/><br/>
 
@@ -136,7 +131,7 @@ This is a series of SmartRunner runs for the NK model with $200$ sites and $8$ n
 Each random move is a single "spin flip". The SmartRunner was run with $l_\mathrm{max} = 2$ and
 $s_\mathrm{opt} = 2$. The fitness trajectory files were not requested. The user-provided input parameter ranges
 resulted in a series of $1 \times 5 \times 2 \times 2 = 20$ runs. For each run, the best fitness (`Fbest`)
-and the corresponding system state (`Sbest`) are provided (note that $\{-1,1\} \to \{0,1\}$),
+and the corresponding system state (`Sbest`) are output (note that $\{-1,1\} \to \{0,1\}$),
 along with the total number of unique function evaluations (`feval`). The input parameters were `ltot` (the
 total number of steps), `Opt` (optimism $\alpha$), and `dF` (the initial guess
 for the expected rate of fitness gain per step $\bar{R}_\mathrm{init}$).
@@ -146,17 +141,15 @@ The output file was generated with the following command:
 python3 run_optimizers.py -amode=SmartRunner -ltot=1500000 -DeltaF_rate_mean=\[0.001,0.01,2,\"log10\"\] -optimism=\[0.0001,1.0,5,\"log10\"\] -mode=NK200.8 -moveset_mode=single_spin_flip -nruns=2 -out=sr.dat -straj=0 -socc=0 -init_each=T -l_max=2 -NKin=NK200.8.dat
 ```
 
-All runs used a previously generated set of NK model parameters stored in `NK200.8.dat.1` and `NK200.8.dat.2` files.
-Two independent runs were carried out for each of the $10$ unique input parameter combinations. Each of the $20$ runs
-started from a randomly generated state.
+All runs used a previously generated set of NK model parameters stored in the `NK200.8.dat.1` and `NK200.8.dat.2` files. Two independent runs were carried out for each of the $10$ unique input parameter combinations. Each of the $20$ runs started from a randomly generated state.
 
 <br/><br/>                                                                             
                                                                                
 Finally, `utilities_min.py` contains several functions designed to work with the `run_optimizers.py` output.
 
-* <span style="color:green"><font size="3"> __read_data_generic(*filename*)__ (reads a single output file into Numpy matrices) </font></span>
+* <span style="color:green"><font size="3"> __read_data_generic(*filename*)__ (reads a single main output file into Numpy matrices) </font></span>
 
-* <span style="color:green"><font size="3"> __read_multiple_files(*filenames*)__ (reads multiple output files and concatenates the data; typically used to combine output of multiple parallel runs) </font></span>
+* <span style="color:green"><font size="3"> __read_multiple_files(*filenames*)__ (reads multiple main output files and concatenates the data; typically used to combine output of multiple parallel runs) </font></span>
 
 * <span style="color:green"><font size="3"> __read_fitness_data(*datafile*)__ (reads a single output file with a fitness trajectory) </font></span>
 
@@ -164,9 +157,10 @@ Finally, `utilities_min.py` contains several functions designed to work with the
 
 <br/><br/>
 
-The `examples/` folder contains five representative runs for each global optimization algorithm and each fitness landscape.
-These runs are provided only as guidance and do not contain any actual results reported in the SmartRunner paper.
-The `commands.txt` file has the commands used to generate the output files in the `examples/` folder.
+The `examples/` folder contains five representative runs that feature each global optimization algorithm and each fitness landscape once. These runs are provided only as guidance and do not contain any actual results reported in the SmartRunner paper. The `commands.txt` file has the commands used to generate the output files in the `examples/` folder.
 
 
 
+```python
+
+```
