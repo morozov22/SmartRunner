@@ -1,0 +1,11 @@
+python3 ../run_optimizers.py -amode=SimulatedAnnealing -mode=Rastrigin_4D -moveset_mode=nnb -Ti=\(10.0,100.0,2,\"log10\"\) -Tf=0.001 -Rbar=0.0 -ltot=10000 -out=sa.dat -schedule=linear -nruns=5 -init=\(5.0,5.0,5.0,5.0\) -straj=1 -socc=1
+
+python3 ../run_optimizers.py -amode=EvolutionaryAlgorithm -ltot=200 -Npop=50 -mu_rate=\[0.1,0.2,2\] -x_rate=0.5 -Rbar=\[0.00,0.01,2\] -mode=Ackley_4D -moveset_mode=nnb -nruns=5 -out=ea.dat -straj=1 -socc=1
+
+python3 ../run_optimizers.py -amode=TabuSearch -ltot=1000 -tabu=\[100,500,5\] -Smax=10000.0 -mode=Griewank_4D -moveset_mode=nnb -nruns=5 -out=ts.dat -straj=1 -socc=1 -init_each=T
+
+python3 ../run_optimizers.py -amode=StochasticHillClimbing -ltot=100000 -T=0.5 -Rbar=0.0 -mode=SK50 -moveset_mode=single_spin_flip -nruns=1 -out=shc.dat -straj=0 -socc=0 -init_each=T -Jout=Jij_SK50.dat
+
+python3 ../run_optimizers.py -amode=SmartRunner -ltot=100000 -DeltaF_rate_mean=0.01 -optimism=1.0 -mode=NK100.4 -moveset_mode=single_spin_flip -nruns=2 -out=sr.dat -straj=0 -socc=0 -init_each=T -l_max=2 -NKout=NK100.4.dat
+
+

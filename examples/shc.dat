@@ -1,0 +1,5 @@
+# amode = StochasticHillClimbing, mode = SK50, moveset_mode = single_spin_flip
+# 1x1x1x1 array, D = 50
+# nruns = 1, straj = 0
+ltot             T         Rbar         Fbest         feval         Sbest
+100000    5.0000e-01    0.0000e+00    4.4590e-01    95865     (-1,1,-1,-1,1,1,-1,-1,1,1,-1,1,-1,1,1,-1,1,-1,-1,1,1,-1,1,-1,-1,-1,-1,-1,1,-1,-1,1,-1,-1,-1,1,-1,1,-1,-1,1,-1,1,-1,1,1,1,-1,1,1)
