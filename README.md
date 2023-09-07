@@ -20,8 +20,9 @@
 
 * <span style="color:blue"><font size="4"> __utilities_min.py__ (auxiliary functions) </font></span>
 
-`run_optimizers.py` is a high-level script for running the following five optimizers: __SmartRunner__, __Evolutionary Algorithm__,
-__Simulated Annealing__, __Stochastic Hill Climbing__, and __Taboo Search__.
+`run_optimizers.py` is a high-level script for running the following five optimizers: __SmartRunner__, __Evolutionary Algorithm__, __Simulated Annealing__, __Stochastic Hill Climbing__, and __Taboo Search__.
+The last four algorithms use code adapted from a gradient-free optimization library called Solid:
+https://github.com/100/Solid.
 
 <br/><br/>
 
