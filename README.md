@@ -2,7 +2,7 @@
 
 ## Developer: Alexandre V. Morozov (morozov@physics.rutgers.edu)
 
-## Paper: https://arxiv.org/abs/2309.04591
+## Paper: J. Yu and A.V. Morozov, "An adaptive Bayesian approach to gradient-free global optimization" https://arxiv.org/abs/2309.04591
 
 ## SmartRunner code:
 
