@@ -2,6 +2,8 @@
 
 ## Developer: Alexandre V. Morozov (morozov@physics.rutgers.edu)
 
+## Paper: https://arxiv.org/abs/2309.04591
+
 ## SmartRunner code:
 
 * <span style="color:blue"><font size="4"> __run_optimizers.py__ (high-level Python3 script for running global optimizers) </font></span>
