@@ -2,7 +2,7 @@
 
 ## Developer: Alexandre V. Morozov (morozov@physics.rutgers.edu)
 
-## Paper: J. Yu and A.V. Morozov, "An adaptive Bayesian approach to gradient-free global optimization" https://arxiv.org/abs/2309.04591
+## Paper: J. Yu and A.V. Morozov, "An adaptive Bayesian approach to gradient-free global optimization" ([Yu, J. and Morozov, A.V. _New J Phys_ 26 (2004) 023027](https://iopscience.iop.org/article/10.1088/1367-2630/ad23a3))
 
 ## SmartRunner code:
 
@@ -18,23 +18,25 @@
 
 * <span style="color:blue"><font size="4"> __tabu_search.py__ (Taboo Search code library) </font></span>
 
+* <span style="color:blue"><font size="4"> __extremal_optimization.py__ (Extremal Optimization code library) [as of June '24] </font></span>
+
 * <span style="color:blue"><font size="4"> __landscapes_min.py__ (landscape and moveset definitions) </font></span>
 
 * <span style="color:blue"><font size="4"> __utilities_min.py__ (auxiliary functions) </font></span>
 
-`run_optimizers.py` is a high-level script for running the following five optimizers: __SmartRunner__, __Evolutionary Algorithm__, __Simulated Annealing__, __Stochastic Hill Climbing__, and __Taboo Search__.
-The last four algorithms use code adapted from a gradient-free optimization library called Solid:
-https://github.com/100/Solid.
+`run_optimizers.py` is a high-level script for running the following five optimizers: __SmartRunner__, __Evolutionary Algorithm__, __Simulated Annealing__, __Stochastic Hill Climbing__, __Taboo Search__, and __Extremal Optimization__.
+__Evolutionary Algorithm__, __Simulated Annealing__, __Stochastic Hill Climbing__, and __Taboo Search__ use code adapted from a gradient-free optimization library Solid:
+[https://github.com/100/Solid](https://github.com/100/Solid). __Extremal Optimization__ is implemented following Stefan Boettcher (Boettcher, S. and Percus, A. _Artificial Intelligence_ 119 (2000) 275-286).
 
 <br/><br/>
 
 Run this command:
 ```
-run_optimizers -h
+python3 run_optimizers.py -h
 ```
 or
 ```
-run_optimizers --help
+python3 run_optimizers.py --help
 ```
 to obtain the list of allowed algorithm types.
 
@@ -42,15 +44,15 @@ to obtain the list of allowed algorithm types.
 
 Run this command:
 ```
-run_optimizers -h -amode=algorithm_type
+python3 run_optimizers.py -h -amode=algorithm_type
 ```
 or
 ```
-run_optimizers --help -amode=algorithm_type,
+python3 run_optimizers.py --help -amode=algorithm_type,
 ```
-where `algorithm_type = {EvolutionaryAlgorithm,SimulatedAnnealing,TabuSearch,StochasticHillClimbing,SmartRunner}` to
+where `algorithm_type = {EvolutionaryAlgorithm,SimulatedAnnealing,TabuSearch,StochasticHillClimbing,SmartRunner,ExtremalOptimization}` to
 obtain an algorithms-specific list of all available options. Most of these options are self-explanatory and the notation
-corresponds to that used in the SmartRunner manuscript.
+corresponds to that used in the SmartRunner manuscript ([Yu, J. and Morozov, A.V. _New J Phys_ 26 (2004) 023027](https://iopscience.iop.org/article/10.1088/1367-2630/ad23a3)).
 
 Please note that some options accept a single value or an array of
 values either on a linear or $\log_{10}$ scale. For example, with StochasticHillClimbing `-T=0.2` will simply set $T=0.2$ in all runs,
@@ -63,7 +65,7 @@ $l_\mathrm{tot} = \{ 10000, 20000, 30000, 40000, 50000 \}$.
 The `-mode=landscape_type` option determines the fitness function to be optimized and the `-moveset_mode=moveset_type` option
 determines the move type. Currently, the code supports
 `landscape_type = {Rastrigin_4D,Ackley_4D,Griewank_4D,double_well_2D}` with `moveset_type = {nnb,spmut}` and
-`landscape_type = {SKZ,NKX.Y}` (where Z is the number of spins in the Sherrington-Kirkpatrick (SK) spin glass model and X,Y are the number of sites and neighbors in the Kauffman's NK model) with `moveset_type = single_spin_flip`.
+`landscape_type = {EAX1xX2,SKZ,NKX.Y}` (where X1xX2 denotes a $X_1 \times X_2$ 2D lattice with periodic boundary conditions in the Edwards-Anderson (EA) spin glass model, Z is the number of spins in the Sherrington-Kirkpatrick (SK) spin glass model, and X,Y are the number of sites and neighbors in the Kauffman's NK model) with `moveset_type = single_spin_flip`.
 The code is designed to be flexible - new systems and movesets can be added in a straighforward manner
 by modifying `landscapes_min.py`.
 
@@ -73,16 +75,14 @@ be set to a large value in the `-ltot=ltot_val` flag, so that the code does not 
 
 If the `-init_each={T,F}` flag is specified, each individual run with a given set of input parameter values will
 start from a randomly chosen state. If the `-init=\(s1,s2,...\)` flag is specified ($(s_1,s_2,\dots)$
-must correspond to a valid state on the fitness landscape), the `-init_each` flag will be ignored and all runs will start from
-the user-provided state.
+must correspond to a valid state on the fitness landscape), the `-init_each` flag will be ignored and all runs will start from the user-provided state.
 
-The sets of randomly generated SK and NK model parameters are stored in auxiliary files. The files are output
+The sets of randomly generated EA/SK and NK model parameters are stored in auxiliary files. The files are output
 using `-Jout=Jij_out.dat` and `-NKout=NK_out.dat` flags respectively, where the `*.dat` are the output filenames. Note that
 for the NK model, two files are actually generated: `NK_out.dat.1` and `NK_out.dat.2`. For the subsequent runs in the
-quenched disorder mode, the model parameter files must be read in using the `-Jin=Jij_in.dat` flag for the SK model and the `-NKin=NK_in.dat` flag for the NK model, otherwise the model parameters will be generated *de novo*. For both models, the parameters will be the same for all runs in the current series specified
-by the `run_optimizers.py` input parameters.
+quenched disorder mode, the model parameter files must be read in using the `-Jin=Jij_in.dat` flag for the EA/SK model and the `-NKin=NK_in.dat` flag for the NK model, otherwise the model parameters will be generated *de novo*. For all models, multiple runs with the same parameter settings can be specified using the `-nruns=nr_val` option.
 
-The `-discrete={T,F}` flag is only valid for the SK model and refers to the probabilistic model for spin couplings.
+The `-discrete={T,F}` flag is only valid for the EA/SK model and refers to the probabilistic model for spin couplings.
 When `-discrete=T`, the couplings are drawn from $\{−1,+1\}$ with equal probability. Otherwise, the couplings are sampled
 from a standard normal distribution.
 

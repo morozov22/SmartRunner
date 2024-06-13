@@ -8,6 +8,7 @@ from evol_algorithm import *
 from simulated_annealing import *
 from tabu_search import *
 from stochastic_hill_climbing import *
+from extremal_optimization import *
 from time import perf_counter
 
 # Initial time in ns:
@@ -17,7 +18,7 @@ time_i = int(perf_counter())
 args = parse_command_line_generic()
 
 
-amode = args['amode'] # EvolutionaryAlgorithm/SmartRunner
+amode = args['amode'] # EvolutionaryAlgorithm/SimulatedAnnealing/TabuSearch/StochasticHillClimbing/SmartRunner/ExtremalOptimization
 
 
 if amode == "EvolutionaryAlgorithm":
@@ -60,8 +61,8 @@ elif amode == "SimulatedAnnealing":
 	assert type(ltot) is int and ltot > 0, "Error: provide a positive integer for ltot!"
 
 	# Schedule type:
-	schedule_type = args['schedule']
-	if 'schedule_type' in args:
+	if 'schedule' in args:
+		schedule_type = args['schedule']
 		assert schedule_type == "linear" or schedule_type == "exponential", \
 			"Error: illegal schedule_type = {}!".format(schedule_type)
 	else:
@@ -120,6 +121,23 @@ elif amode == "SmartRunner":
 	else:
 		sopt = 2
 
+elif amode == "ExtremalOptimization":
+
+	# Process 'array coordinates':
+	ltot = postprocess_val('ltot',int,args)
+	tau = postprocess_val('tau',float,args)
+	Rbar = postprocess_val('Rbar',float,args)
+
+	if len(Rbar) > 1 or Rbar[0] != 0.0:
+		print("WARNING: expected Rbar=0.0 in amode = {}!".format(amode))
+		print("Resetting ..")
+		Rbar = [0.0]
+
+	prm1 = ltot
+	prm2 = tau
+	prm3 = Rbar
+	prm_labels = ["ltot","tau","Rbar"]
+
 else:
 	print("Unknown amode = {}!".format(amode))
 	sys.exit("\nTerminating ..")
@@ -139,8 +157,17 @@ else:
 # Set up auxiliary parameters of the landscape and move set:
 
 # Landscape type and moveset modes:
-mode = args['mode'] # SKZZZ/NKXX.YY/Rastrigin_4D/Ackley_4D/Griewank_4D/double_well_2D
+mode = args['mode'] # SKZZZ/EAXxY/NKXX.YY/Rastrigin_4D/Ackley_4D/Griewank_4D/double_well_2D
 moveset_mode = args['moveset_mode'] # nnb/spmut/single_spin_flip
+
+if amode == "ExtremalOptimization":
+	if mode[:2] != "SK" and mode[:2] != "EA":
+		print("mode = {} is not supported in amode = {}!".format(mode,amode))
+		sys.exit("\nTerminating ..")
+	####
+	if moveset_mode != "single_spin_flip":
+		print("moveset_mode = {} is not supported in amode = {}!".format(moveset_mode,amode))
+		sys.exit("\nTerminating ..")
 
 # Output file:
 fout = args['out']
@@ -171,14 +198,22 @@ D,N = get_DN(mode,moveset_mode)
 ranges = get_ranges(D,mode)
 Delta_x = get_Delta_x(mode)
 
-if mode[:2] == "SK" or mode[:2] == "NK":
+if mode[:2] == "SK" or mode[:2] == "EA" or mode[:2] == "NK":
 	rparams = None
 else:
 	rparams = (ranges,Delta_x,)
 
 # Set up mode-dependent parameters:
-if mode[:2] == "SK":
-	Nspins = int(mode[2:])
+if mode[:2] == "SK" or mode[:2] == "EA":
+	if mode[:2] == "SK":
+		Nspins = int(mode[2:])
+	elif mode[:2] == "EA":
+		toks = mode[2:].split("x")
+		assert len(toks) == 2, "Error: unknown EA mode format: {}!".format(mode)
+		Nx = int(toks[0])
+		Ny = int(toks[1])
+		Nspins = Nx * Ny
+	######
 	assert Nspins == D, "Error: mismatch between Nspins={} and D={}!".format(Nspins,D)
 	# Sampling mode for Jij couplings:
 	if 'discrete' in args:
@@ -201,7 +236,10 @@ if mode[:2] == "SK":
 		Jij_set = np.loadtxt(Jin, dtype=np.float64)
 		assert Jij_set.shape[0] == Nspins and Jij_set.shape[1] == Nspins, "Error: Jij matrix dim mismatch!"
 	else:
-		Jij_set = Jij(Nspins,discrete=discr) # generate spin couplings *once*
+		if mode[:2] == "SK":
+			Jij_set = Jij(Nspins,discrete=discr) # generate spin couplings *once*
+		elif mode[:2] == "EA":
+			Jij_set = Jij_EA(Nx,Ny,discrete=discr) # generate spin couplings *once*
 	######
 	if 'Jout' in args:
 		Jout = args['Jout']
@@ -328,6 +366,9 @@ for m in range(l1):
 					[fvals,Fglobal_best,crd_global_best_tuple,node_occ,Ftraj,traj_states] = \
 						SmartRunner(crd_init_tuple,N,ltot[m],ranges,Delta_x,DeltaF_rate_mean[i],optimism[k], \
 									get_fitness,make_move,l_max,mode,moveset_mode,params,mparams,sopt=sopt,max_feval=max_feval)
+				elif amode == "ExtremalOptimization":
+					[fvals,Fglobal_best,crd_global_best_tuple,node_occ,Ftraj,traj_states] = \
+						ExtremalOpt(crd_init_tuple, tau[k], ltot[m], params, mode, max_feval=max_feval)
 				else:
 					print("Unknown amode = {}!".format(amode))
 					sys.exit("\nTerminating ..")
@@ -407,6 +448,11 @@ elif amode == "SmartRunner":
 				format(amode,mode,moveset_mode,l1,l2,l3,nruns,D,l_max,nruns,sopt,straj)
 
 	header_arr = ['ltot','Opt','dF','Fbest','feval','Sbest']
+elif amode == "ExtremalOptimization":
+	comment_str = "# amode = {}, mode = {}, moveset_mode = {}\n# {}x{}x{}x{} array, D = {}\n# nruns = {}, straj = {}\n". \
+				format(amode,mode,moveset_mode,l1,l2,l3,nruns,D,nruns,straj)
+
+	header_arr = ['ltot','  tau','Rbar','Fbest','feval','Sbest']
 else:
 	print("Unknown amode = {}!".format(amode))
 	sys.exit("\nTerminating ..")

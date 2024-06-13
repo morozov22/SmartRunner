@@ -26,7 +26,7 @@ def get_ranges(D,mode):
         ranges = np.array([-600,600,-600,600,-600,600,-600,600]).reshape((D, 2))
     elif mode == "double_well_2D":
         ranges = np.array([-10,10,-10,10]).reshape((D, 2))
-    elif mode[:2] == "SK" or mode[:2] == "NK":
+    elif mode[:2] == "SK" or mode[:2] == "EA" or mode[:2] == "NK":
         ranges = None
     else:
         raise Exception("Unknown mode: {} in get_ranges!".format(mode))
@@ -48,7 +48,7 @@ def get_Delta_x(mode):
         Delta_x = 1.0
     elif mode == "double_well_2D":
         Delta_x = 0.01
-    elif mode[:2] == "SK" or mode[:2] == "NK":
+    elif mode[:2] == "SK" or mode[:2] == "EA" or mode[:2] == "NK":
         Delta_x = None
     else:
         raise Exception("Unknown mode: {} in get_Delta_x!".format(mode))
@@ -71,6 +71,10 @@ def get_DN(mode,moveset_mode):
         D = 2
     elif mode[:2] == "SK":
         D = int(mode[2:])
+    elif mode[:2] == "EA":
+        toks = mode[2:].split("x")
+        assert len(toks) == 2, "Error: unknown EA mode format in get_DN: {}!".format(mode)
+        D = int(toks[0]) * int(toks[1])
     elif mode[:2] == "NK":
         toks = mode[2:].split(".")
         assert len(toks) == 2, "Error: unknown NK mode format in get_DN: {}!".format(mode)
@@ -117,6 +121,8 @@ def get_fitness(crd,mode,params=None):
         F = double_well_2D(crd)
     elif mode[:2] == "SK":
         F = H_SK(crd,params[0]) # params[0] = Jij_set
+    elif mode[:2] == "EA":
+        F = H_EA(crd,params[0]) # params[0] = Jij_set
     elif mode[:2] == "NK":
         F = F_NK(crd,params[0],params[1])
     else:
@@ -251,7 +257,7 @@ def F_NK(crd,nb_ind,Fvals):
     return round(F/Nsites,4)
 
 
-# A set of spin glass constants Jij:
+# A set of SK spin glass constants Jij:
 def Jij(Nspins, discrete=False):
 
     if Nspins <= 0:
@@ -274,6 +280,45 @@ def Jij(Nspins, discrete=False):
     return Jij_set
 
 
+# A set of EA spin glass constants Jij:
+def Jij_EA(Nx, Ny, discrete=False):
+
+    if Nx <= 0 or Ny <= 0:
+        raise Exception("Provide positive dims of the 2D spin lattice in Jij_EA - ({},{}) is invalid!".format(Nx,Ny))
+
+
+    Ns = int(Nx*Ny)
+    Jij_set = np.zeros((Ns,Ns))
+
+    for i in range(0, Nx):
+        for j in range(0, Ny):
+            ####
+            if discrete == False:
+                a = np.random.normal(size=2)
+            else:
+                a = np.random.choice([-1.0,1.0], size=2)
+            ####
+            pos = i + j*Nx
+            # Periodic BCs:
+            ####
+            if i==(Nx - 1):
+                pos_r = pos - (Nx - 1)
+                Jij_set[pos_r,pos] = a[0]
+            else:
+                pos_r = pos + 1
+                Jij_set[pos,pos_r] = a[0]
+            ####
+            if j==(Ny - 1):
+                pos_d = i
+                Jij_set[pos_d,pos] = a[1]
+            else:
+                pos_d = pos + Nx
+                Jij_set[pos,pos_d] = a[1]
+            ######
+
+    return Jij_set
+
+
 # SK spin glass 'fitness' (-energy):
 def H_SK(crd,Jij_set):
 
@@ -292,6 +337,72 @@ def H_SK(crd,Jij_set):
             E_SK -= Jij_set[i,j] * crd[i] * crd[j]
 
     return -round(E_SK/(Nspins*sqrt(Nspins)),4)
+
+
+# SK spin glass 'fitness' (-energy), separately for each spin:
+def H_SK_site(crd,Jij_set):
+
+    if Jij_set.shape[0] != Jij_set.shape[1]:
+        raise Exception("Expected a square matrix in H_SK!")
+
+    Nspins = Jij_set.shape[0]
+
+    if len(crd) != Nspins:
+        raise Exception("Mismatch between spin_state and interaction_matrix in H_SK_site!")
+
+    E_SK = np.zeros(Nspins)
+
+    for i in range(0, Nspins):
+        E_SK_cur = 0.0
+        for j in range(i+1, Nspins):
+            E_SK_cur -= Jij_set[i,j] * crd[i] * crd[j]
+        ####
+        E_SK[i] = -round(E_SK_cur,4)
+
+    return E_SK
+
+
+# EA spin glass 'fitness' (-energy):
+def H_EA(crd,Jij_set):
+
+    if Jij_set.shape[0] != Jij_set.shape[1]:
+        raise Exception("Expected a square matrix in H_EA!")
+
+    Nspins = Jij_set.shape[0]
+
+    if len(crd) != Nspins:
+        raise Exception("Mismatch between spin_state and interaction_matrix in H_EA!")
+
+    E_EA = 0.0
+
+    for i in range(0, Nspins):
+        for j in range(i+1, Nspins):
+            E_EA -= Jij_set[i,j] * crd[i] * crd[j]
+
+    return -round(E_EA/Nspins,4)
+
+
+# EA spin glass 'fitness' (-energy), separately for each spin:
+def H_EA_site(crd,Jij_set):
+
+    if Jij_set.shape[0] != Jij_set.shape[1]:
+        raise Exception("Expected a square matrix in H_EA!")
+
+    Nspins = Jij_set.shape[0]
+
+    if len(crd) != Nspins:
+        raise Exception("Mismatch between spin_state and interaction_matrix in H_EA!")
+
+    E_EA = np.zeros(Nspins)
+
+    for i in range(0, Nspins):
+        E_EA_cur = 0.0
+        for j in range(i+1, Nspins):
+            E_EA_cur -= Jij_set[i,j] * crd[i] * crd[j]
+        ####
+        E_EA[i] = -round(E_EA_cur,4)
+
+    return E_EA
 
 
 #############################
@@ -447,7 +558,7 @@ def get_all_neighbors(crd_cur,moveset_mode,params=None):
 # params = (ranges,Delta_x)
 def generate_random_state(dim,mode,params=None):
 
-    if mode[:2] == "SK" or mode[:2] == "NK":
+    if mode[:2] == "SK" or mode[:2] == "EA" or mode[:2] == "NK":
         random_crd = generate_random_spin_state(dim)
     else:
         random_crd = generate_random_crd(dim,params[0],params[1])

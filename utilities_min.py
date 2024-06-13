@@ -24,7 +24,7 @@ def parse_command_line_generic():
 
     if len(argumentList) == 0:
         print("No input arguments provided, please use '-h -amode=algorithm_name' or '--help -amode=algorithm_name' for help!")
-        print("Allowed algorithm_name values: EvolutionaryAlgorithm/SimulatedAnnealing/TabuSearch/StochasticHillClimbing/SmartRunner")
+        print("Allowed algorithm_name values: EvolutionaryAlgorithm/SimulatedAnnealing/TabuSearch/StochasticHillClimbing/SmartRunner/ExtremalOptimization")
         sys.exit("\nTerminating ..")
     else:
 
@@ -100,7 +100,7 @@ def parse_command_line_generic():
 
             if not 'amode' in args:
                 print("Please provide -amode=algorithm_name with -h or --help for algorithm-specific help!")
-                print("Allowed algorithm_name values: EvolutionaryAlgorithm/SimulatedAnnealing/TabuSearch/StochasticHillClimbing/SmartRunner")
+                print("Allowed algorithm_name values: EvolutionaryAlgorithm/SimulatedAnnealing/TabuSearch/StochasticHillClimbing/SmartRunner/ExtremalOptimization")
                 sys.exit("\nTerminating ..")
             else:
                 amode = args['amode']
@@ -147,6 +147,16 @@ def parse_command_line_generic():
                     print("[-optimism=opt_val OR -optimism=(opt_min,opt_max,opt_num[,\"log10\"]) OR -optimism=[opt_min,opt_max,opt_num[,\"log10\"]]] \\")
                     print("-mode=landscape_type -moveset_mode=moveset_type -out=outfilename \\")
                     print("[-max_feval=max_fevals -nruns=nr_val -l_max=l_max_val -straj={0,1} -socc={0,1} -sopt={1,2}] \\")
+                    print("[[-init=(s1,s2,...) OR -init=[s1,s2,...]] -init_each={T,F}] \\")
+                    print("[-Jin=Jij_in.dat -Jout=Jij_out.dat -discrete={T,F}] \\")
+                    print("[-NKin=NK_in.dat -NKout=NK_out.dat]")
+                elif amode == "ExtremalOptimization":
+                    print("python3 {} -amode=ExtremalOptimization [-ltot=ltot_val OR -ltot=(ltot_min,ltot_max,ltot_num[,\"log10\"]) OR -ltot=[ltot_min,ltot_max,ltot_num[,\"log10\"]]] \\".format(sys.argv[0]))
+                    print("[-tau=tau_val OR -tau=(tau_min,tau_max,tau_num[,\"log10\"]) OR -tau=[tau_min,tau_max,tau_num[,\"log10\"]]] \\")
+                    print("[-Rbar=R_val OR -Rbar=(R_min,R_max,R_num[,\"log10\"]) OR -Rbar=[R_min,R_max,R_num[,\"log10\"]]] \\")
+                    #print("[-Smax=Smax_val OR -Smax=(Smax_min,Smax_max,Smax_num) OR -Smax=[Smax_min,Smax_max,Smax_num]] \\")
+                    print("-mode=landscape_type -moveset_mode=moveset_type -out=outfilename \\")
+                    print("[-max_feval=max_fevals -nruns=nr_val -straj={0,1} -socc={0,1}] \\")
                     print("[[-init=(s1,s2,...) OR -init=[s1,s2,...]] -init_each={T,F}] \\")
                     print("[-Jin=Jij_in.dat -Jout=Jij_out.dat -discrete={T,F}] \\")
                     print("[-NKin=NK_in.dat -NKout=NK_out.dat]")
@@ -217,12 +227,16 @@ def read_data_generic(filename):
                     prm1_arr = np.zeros(dtot,dtype=np.int64).reshape((dim[0],dim[1],dim[2],dim[3]))
                     prm2_arr = np.zeros(dtot,dtype=np.float64).reshape((dim[0],dim[1],dim[2],dim[3]))
                     prm3_arr = np.zeros(dtot,dtype=np.float64).reshape((dim[0],dim[1],dim[2],dim[3]))
+                elif amode == "ExtremalOptimization":
+                    prm1_arr = np.zeros(dtot,dtype=np.int64).reshape((dim[0],dim[1],dim[2],dim[3]))
+                    prm2_arr = np.zeros(dtot,dtype=np.float64).reshape((dim[0],dim[1],dim[2],dim[3]))
+                    prm3_arr = np.zeros(dtot,dtype=np.float64).reshape((dim[0],dim[1],dim[2],dim[3]))
                 else:
                     raise Exception("Unknown amode: {} in read_data_generic!".format(amode))
                 ####
                 Fbest_arr = np.zeros(dtot).reshape((dim[0],dim[1],dim[2],dim[3]))
                 feval_arr = np.zeros(dtot,dtype=np.int64).reshape((dim[0],dim[1],dim[2],dim[3]))
-                if mode[:2] == "SK" or mode[:2] == "NK": # spin glasses
+                if mode[:2] == "SK" or mode[:2] == "EA" or mode[:2] == "NK": # spin glasses
                     state_arr = np.zeros(dtot*D,dtype=np.int8).reshape((dim[0],dim[1],dim[2],dim[3],D))
                 else:
                     state_arr = np.zeros(dtot*D).reshape((dim[0],dim[1],dim[2],dim[3],D))
@@ -271,6 +285,10 @@ def read_data_generic(filename):
                         prm2_arr[i,j,k,l] = float(toks[1])
                         prm3_arr[i,j,k,l] = float(toks[2])
                     elif amode == "SmartRunner":
+                        prm1_arr[i,j,k,l] = int(toks[0])
+                        prm2_arr[i,j,k,l] = float(toks[1])
+                        prm3_arr[i,j,k,l] = float(toks[2])
+                    elif amode == "ExtremalOptimization":
                         prm1_arr[i,j,k,l] = int(toks[0])
                         prm2_arr[i,j,k,l] = float(toks[1])
                         prm3_arr[i,j,k,l] = float(toks[2])
