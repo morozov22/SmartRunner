@@ -162,8 +162,3 @@ Finally, `utilities_min.py` contains several functions designed to work with the
 
 The `examples/` folder contains five representative runs that feature each global optimization algorithm and each fitness landscape once. These runs are provided only as guidance and do not contain any actual results reported in the SmartRunner paper. The `commands.txt` file has the commands used to generate the output files in the `examples/` folder.
 
-
-
-```python
-
-```
